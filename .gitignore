@@ -1,0 +1,40 @@
+# ---- OS / Editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Environment / Secrets ----
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ---- Node / n8n (falls du später Node tooling nutzt) ----
+node_modules/
+npm-cache/
+.yarn/
+.yarn-cache/
+.pnpm-store/
+
+# ---- Python (falls du später Skripte nutzt) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.envrc
+
+# ---- n8n local data (nur falls du local/self-hosted Dateien im Repo hast – besser NICHT committen) ----
+.n8n/
+n8n-data/
+n8n.sqlite

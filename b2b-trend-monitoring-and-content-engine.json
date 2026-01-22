@@ -1,0 +1,771 @@
+{
+  "name": "b2b-trend-monitoring-and-content-engine",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $json.ARTICLE_URL_ALLOWED }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        240,
+        304
+      ],
+      "id": "78c3bfa8-bff5-427a-8365-1aee53a1ae34",
+      "name": "fetch_article_html"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -768,
+        32
+      ],
+      "id": "a247b38e-0c66-4c41-b1d7-784dd9b793fb",
+      "name": "Weekly_Run"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "GOOGLE_SHEET_ID",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "GOOGLE_SHEET_GID_OR_NAME",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -576,
+        32
+      ],
+      "id": "7e60e8f4-0593-4389-9275-1faac065ad83",
+      "name": "load_target_audience_(Google_Sheets)1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3d67c991-6323-4cc3-8f6c-d0995c732ff2",
+              "name": "Branche",
+              "value": "={{ $json.Branche }}",
+              "type": "string"
+            },
+            {
+              "id": "03addc64-519a-46d2-b9f1-2ea4cb4ce91d",
+              "name": "Zielgruppenrolle",
+              "value": "={{ $json.Zielgruppenrolle }}",
+              "type": "string"
+            },
+            {
+              "id": "f2f51c02-369c-4378-8b57-cdd159646d6d",
+              "name": "Alter",
+              "value": "={{ $json.Alter }}",
+              "type": "string"
+            },
+            {
+              "id": "477a99ea-4a9c-4c2a-94cb-b22ee74d8af2",
+              "name": "Ziele der Zielgruppe",
+              "value": "={{ $json['Ziele der Zielgruppe'] }}",
+              "type": "string"
+            },
+            {
+              "id": "6c331195-a4c5-4421-8500-612ed77ff7f7",
+              "name": "Ängste der Zielgruppe",
+              "value": "={{ $json['Ängste der Zielgruppe'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c75f25ae-96ad-4e8d-b5e3-c318d1ee1319",
+              "name": "Land/Region der Zielgruppe",
+              "value": "={{ $json['Land/Region der Zielgruppe'] }}",
+              "type": "string"
+            },
+            {
+              "id": "2f371a54-80fb-421a-9891-a9df739b7739",
+              "name": "Keywords für die Zielgruppe",
+              "value": "={{ $json['Keywords für die Zielgruppe'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        32
+      ],
+      "id": "9d054bb0-14fe-4e3a-98df-f88cf368a65f",
+      "name": "set_audience_context"
+    },
+    {
+      "parameters": {
+        "modelId": "gpt-4o-mini",
+        "responses": {
+          "values": [
+            {
+              "content": "=Du bist ein professioneller Query- & Search-Intent-Experte mit Schwerpunkt auf SEO, GAIO (AI Search) und B2B-Entscheider.\n\nAufgabe:\nErzeuge exakt 5 realistische, hochwertige Suchanfragen (Queries), die typische Google- und AI-Search-Suchen der beschriebenen Zielgruppe abbilden. Die Queries sollen kauf- und entscheidungsnah sein und reale Suchintentionen widerspiegeln.\n\nEingabedaten:\nBranche: {{ $json.Branche }}\nZielgruppenrolle: {{ $json.Zielgruppenrolle }}\nAlter: {{ $json.Alter }}\nZiele der Zielgruppe: {{ $json['Ziele der Zielgruppe'] }}\nÄngste der Zielgruppe: {{ $json['Ängste der Zielgruppe'] }}\nLand/Region der Zielgruppe: {{ $json['Land/Region der Zielgruppe'] }}\nKeywords für die Zielgruppe: {{ $json['Keywords für die Zielgruppe'] }}\n\nAnforderungen an die Queries:\n- B2B-orientiert, entscheidungsnah\n- Natürlichsprachlich (keine Keyword-Stapel, keine Marketing-Phrasen)\n- Problem-, Lösungs- oder Ziel-orientiert\n- SEO-tauglich (semantisch klar, suchmaschinenlesbar)\n- GAIO-tauglich (für AI Overviews, LLMs, Conversational Search geeignet)\n- Keine Fragenpflicht: Mischung aus Phrasen und erklärenden Suchanfragen erlaubt\n- Keine Wiederholungen oder sehr ähnlichen Queries\n\nAusgabeformat (zwingend):\n- Nur JSON\n- Exakt 5 JSON-Objekte\n- Jedes Objekt enthält genau ein Feld: \"query\"\n- Keine zusätzlichen Texte, keine Kommentare\n- Ausgabe beginnt mit [ und endet mit ]\n\nBeispielstruktur:\n[\n  { \"query\": \"...\" },\n  { \"query\": \"...\" },\n  { \"query\": \"...\" },\n  { \"query\": \"...\" },\n  { \"query\": \"...\" }\n]"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        32
+      ],
+      "id": "9421c083-42cf-4b12-bcbc-2c7cfbe5864c",
+      "name": "generate_search_queries",
+      "credentials": {
+        "openAiApi": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import json\nresult = []\nj = _items[0].get(\"json\", {})\n\n# OpenAI Responses Node liefert bei dir das JSON-Array als Text hier:\ntext = \"\"\ntry:\n    text = j[\"output\"][0][\"content\"][0][\"text\"]\nexcept Exception:\n    text = \"\"\n\nif not text:\n    return []\n\n# text ist z.B.: [ { \"query\": \"...\" }, ... ]\nqueries = json.loads(text)\n\nfor q in queries:\n    query_text = (q or {}).get(\"query\")\n    if query_text and isinstance(query_text, str):\n        result.append({\"json\": {\"query\": query_text.strip()}})\n\nreturn result\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        32
+      ],
+      "id": "5deec569-db71-4536-b338-84837ba61a76",
+      "name": "parse_queries_list"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "pythonNative",
+        "pythonCode": "q = _item[\"json\"].get(\"query\",\"\").lower().strip()\n\n# leichtes Cleaning für News Search\nq = q.replace(\":\", \" \")\nq = q.replace(\"wie \", \"\")\nq = \" \".join(q.split())\n\nreturn { \"json\": { \"query\": q } }\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        32
+      ],
+      "id": "acea95f0-2b9d-4f27-8eb7-957c0a526254",
+      "name": "normalize_queries_for_Google_News"
+    },
+    {
+      "parameters": {
+        "operation": "google_news",
+        "q": "={{ $json.query }}",
+        "additionalFields": {
+          "gl": "de",
+          "hl": "de"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApi",
+      "typeVersion": 1,
+      "position": [
+        512,
+        32
+      ],
+      "id": "7b26bd42-903c-4632-97eb-3921cd5b94a1",
+      "name": "fetch_Google_News_results",
+      "credentials": {
+        "serpApiApi": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "pythonNative",
+        "pythonCode": "j = _item.get(\"json\", {})\n\n# SerpAPI Google News Node liefert meistens: j[\"news_results\"] (Array)\nnews = j.get(\"news_results\") or []\nquery = j.get(\"search_parameters\", {}).get(\"q\") or j.get(\"query\") or \"\"\n\n# Anzahl Artikel pro Query begrenzen (Default 3)\nMAX_ARTICLES = 3\n\narticles = []\ncount = 0\n\nfor n in news:\n    if count >= MAX_ARTICLES:\n        break\n\n    url = n.get(\"link\") or n.get(\"news_link\") or n.get(\"url\")\n    if not url:\n        continue\n    \n    title = n.get(\"title\") or \"\"\n    snippet = n.get(\"snippet\") or \"\"\n    published_at = n.get(\"date\") or n.get(\"published_date\") or \"\"\n  \n    source_name = \"\"\n    src = n.get(\"source_name\")\n    if isinstance(src, dict):\n        source_name = src.get(\"name\") or \"\"\n    elif isinstance(src, str):\n        source_name = src\n    \n    articles.append({\n        \"query\": query,\n        \"source_name\": source_name,\n        \"title\": n.get(\"title\") or \"\",\n        \"snippet\": n.get(\"snippet\") or \"\",\n        \"published_at\": n.get(\"date\") or n.get(\"published_date\") or \"\",\n        \"article_url\": url\n    })\n    count += 1\n\nreturn {\n    \"json\": {\n        \"query\": query,\n        \"articles\": articles\n    }\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        304
+      ],
+      "id": "1f803321-8263-45a5-8ec2-af70aeee05cd",
+      "name": "extract_article_links"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "articles",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        304
+      ],
+      "id": "afd72fa2-b1b3-4ff7-a548-5a32a53c955c",
+      "name": "split_articles_into_items"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "pythonNative",
+        "pythonCode": "import re\n\nj = _item.get(\"json\", {})\n\nurl = (j.get(\"article_url\") or \"\").lower().strip()\ntitle = (j.get(\"title\") or \"\").lower().strip()\npublished_at = (j.get(\"published_at\") or \"\")\nquery = (j.get(\"query\") or \"\").lower().strip()\n\n# ------------------------\n# 1) Filter-Regeln\n# ------------------------\nskip = False\nreasons = []\n\n# Advertorial / Sponsored (z.B. Handelsblatt /adv/)\nif \"/adv/\" in url or \"advertorial\" in title or \"anzeige\" in title or \"sponsored\" in title:\n    skip = True\n    reasons.append(\"advertorial_or_sponsored\")\n\n# PR-Verteiler (häufig dünn/werblich)\nif \"openpr.de\" in url:\n    skip = True\n    reasons.append(\"pr_distribution\")\n\n# sehr alt (hier: 2023 oder älter)\nif \"2023\" in published_at or \"/2023/\" in url:\n    skip = True\n    reasons.append(\"too_old\")\n\n# ------------------------\n# 2) Business-Impact Score (0-100)\n# ------------------------\nscore = 0\n\n# Keywords (deine Ziele)\nboost_terms = [\n    \"kosten\", \"effizienz\", \"automatis\", \"prozess\", \"digital\", \"sicherheit\",\n    \"cyber\", \"compliance\", \"wachstum\", \"produktivit\", \"sap\", \"ki\", \"ai\", \"cloud\"\n]\n\n# Branchen-/Use-Case-Signale\nimpact_terms = [\n    \"case\", \"praxis\", \"implement\", \"rollout\", \"einführung\", \"optimiert\",\n    \"spart\", \"reduziert\", \"steigert\", \"erfolgreich\", \"partnerschaft\",\n    \"markt\", \"bericht\", \"studie\"\n]\n\ntext_for_scoring = f\"{title} {query} {url}\"\n\n# Basispunkte: passt zur Ziel-Intent-Query?\nfor t in boost_terms:\n    if t in text_for_scoring:\n        score += 6\n\n# Extra: konkrete Business-Story/Umsetzung\nfor t in impact_terms:\n    if t in text_for_scoring:\n        score += 4\n\n# Penalty: sehr generische „Roadmap“-Tipps ohne News-Charakter \nif \"roadmap\" in title or \"tipps\" in title:\n    score -= 10\n\n# Penalty: reine Statistik/Unterseite (z.B. \"Kennzahlen\")\nif title.strip() in [\"kennzahlen\"] or \"kennzahlen\" == title.strip():\n    score -= 15\n\n# Cap\nif score < 0:\n    score = 0\nif score > 100:\n    score = 100\n\n# Ergebnisfelder setzen\nj[\"skip\"] = skip\nj[\"skip_reason\"] = \", \".join(reasons) if reasons else \"\"\nj[\"impact_score\"] = score\n\nreturn {\"json\": j}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        304
+      ],
+      "id": "e4c26082-e415-46d6-a5a2-e6cefa006046",
+      "name": "filter_and_score_articles"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "valid = []\n\nfor it in _items:\n    j = it.get(\"json\", {})\n    if not isinstance(j, dict):\n        continue\n    if j.get(\"skip\") is False:\n        valid.append(j)\n\n# falls nichts übrig bleibt\nif len(valid) == 0:\n    return [{\"json\": {\"status\": \"error\", \"reason\": \"no_valid_articles\"}}]\n\n# Sort: impact_score desc\nvalid.sort(key=lambda x: int(x.get(\"impact_score\") or 0), reverse=True)\n\nTOP_N = 1  # <-- auf 3 setzen, wenn du Top 3 willst\npicked = valid[:TOP_N]\n\nresult = []\nfor p in picked:\n    result.append({\"json\": p})\n\nreturn result\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        304
+      ],
+      "id": "b4fb13b7-0827-45cf-8e9e-65a26f0ffd72",
+      "name": "select_top_article"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "pythonNative",
+        "pythonCode": "import re\n\nj = _item.get(\"json\", {})\n\nhtml = j.get(\"body\") or j.get(\"data\") or j.get(\"response\") or \"\"\nif isinstance(html, dict):\n    html = str(html)\n\nif not isinstance(html, str) or len(html.strip()) == 0:\n    j[\"extraction_status\"] = \"fetch_failed_or_empty\"\n    j[\"article_text\"] = \"\"\n    return {\"json\": j}\n\nhtml = re.sub(r\"(?is)<(script|style).*?>.*?(</\\1>)\", \" \", html)\ntext = re.sub(r\"(?s)<[^>]+>\", \" \", html)\n\ntext = (\n    text.replace(\"&nbsp;\", \" \")\n        .replace(\"&amp;\", \"&\")\n        .replace(\"&quot;\", \"\\\"\")\n        .replace(\"&#39;\", \"'\")\n)\n\ntext = re.sub(r\"\\s+\", \" \", text).strip()\n\nif len(text) < 600:\n    j[\"extraction_status\"] = \"no_text_extracted\"\n    j[\"article_text\"] = \"\"\nelse:\n    j[\"extraction_status\"] = \"ok\"\n    j[\"article_text\"] = text[:20000]  # Token-Schutz\n\nreturn {\"json\": j}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        304
+      ],
+      "id": "2d5c376e-1a6d-4b48-9296-1d837b65b4d6",
+      "name": "extract_article_text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3817ea4f-aa13-4493-bc6e-2e40159b8655",
+              "leftValue": "={{ $json.extraction_status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -736,
+        704
+      ],
+      "id": "c5b03c03-55a7-4e27-a05f-29ed9c28a1d0",
+      "name": "validate_article_text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=titel: {{ $('select_top_article').item.json.title }}\npublished_at: {{ $('select_top_article').item.json.published_at }}\nurl: {{ $('select_top_article').item.json.article_url }}\n\narticle_text: {{ $json.article_text }}",
+        "options": {
+          "systemMessage": "=Du bist ein professioneller B2B-Content Writer mit Fokus auf Entscheider im Mittelstand.\n\n=====================\nINPUT\n=====================\n- title (String)\n- published_at (String)\n- url (String)\n- article_text (String, kann leer sein)\n\n=====================\nAUFGABE\n=====================\nErstelle aus dem Input genau diese Content-Assets zur gleichen Story:\n\n1) Einen LinkedIn Post\n2) Einen Instagram Post\n3) Einen Facebook Post\n4) Einen Newsletter\n\nZusätzlich:\n5) Eine kurze News-Zusammenfassung (für Sheet)\n6) Eine knackige Headline (für Sheet)\n7) Titel + URL sauber übernehmen (für Sheet)\n\n=====================\nHARTE REGELN\n=====================\n- Nutze ausschließlich die gelieferten INPUT-Daten.\n- Kein WebSearch. Keine externen Annahmen.\n- Erfinde keine Fakten, Zahlen oder Zitate.\n- Wenn etwas unklar ist, formuliere vorsichtig (z. B. laut Artikel oder deutet darauf hin).\n- Keine Hashtags.\n- Keine Emojis.\n- Keine Markdown-Formatierung (kein **, __, ##, ###).\n- Keine Anführungszeichen im Textinhalt.\n- Alle Social Posts strikt in dieser Struktur:\n  Hook → Insight → Meinung → Call-to-Action\n- Der Call-to-Action endet immer als Frage.\n- Ton: kompetent, direkt, businessnah. Kein Clickbait.\n- Sprache: Deutsch.\n- Bulletpoints sind ausschließlich im Feld Newsletter erlaubt und müssen mit - beginnen.\n- Bei widersprüchlichen Anforderungen haben Format- und JSON-Regeln immer Vorrang vor Stilregeln.\n- Verwende keine Escape-Sequenzen wie \\n, \\t oder \\\\.\n\n=====================\nFALLBACK-LOGIK\n=====================\nWenn article_text leer ist oder weniger als 600 Zeichen enthält:\n- Die News ausschließlich aus title, published_at und url ableiten.\n- Keine Details oder Zahlen erfinden.\n- Insight allgemein halten (Prinzip, Best Practice, Relevanz).\n- Alle Felder trotzdem vollständig erzeugen.\n\n=====================\nAUSGABEFORMAT (Z W I N G E N D)\n=====================\n- Ausschließlich valides JSON.\n- Genau 8 Top-Level-Keys.\n- Keine zusätzlichen Keys.\n- Alle Werte müssen Strings sein.\n- Keine Zeilen oder Zeichen vor oder nach dem JSON.\n- Kein Komma nach dem letzten Feld (kein trailing comma).\n- Alle Zeilenumbrüche müssen innerhalb von String-Werten liegen.\n- Verwende maximal zwei aufeinanderfolgende Zeilenumbrüche innerhalb eines Feldes.\n\n=====================\nJSON-SCHEMA (exakt so ausgeben)\n=====================\n{\n  \"Titel\": \"\",\n  \"News\": \"\",\n  \"Headline\": \"\",\n  \"URL\": \"\",\n  \"Post LinkedIn\": \"\",\n  \"Post Instagram\": \"\",\n  \"Post Facebook\": \"\",\n  \"Newsletter\": \"\"\n}\n\n=====================\nINHALTLICHE ANFORDERUNGEN\n=====================\n- Titel:\n  Aus title ableiten, ggf. gekürzt, maximal 90 Zeichen.\n\n- News:\n  2–4 Sätze.\n  Was ist neu und warum ist es relevant für Entscheider.\n  Nur auf Basis von article_text bzw. Fallback-Regeln.\n\n- Headline:\n  Ein Satz, maximal 70 Zeichen.\n  Klarer Entscheider-Nutzen oder Business-Impact.\n\n- URL:\n  Exakt der übergebene url-Wert.\n\n- Post LinkedIn:\n  900–1.300 Zeichen.\n  Klare Trennung von Hook, Insight, Meinung, Call-to-Action.\n\n- Post Instagram:\n  500–800 Zeichen.\n  Gleiche Struktur, kompakter formuliert.\n\n- Post Facebook:\n  600–1.000 Zeichen.\n  Dialogisch, gleiche Struktur, Call-to-Action als Frage.\n\n- Newsletter:\n  1.200–1.800 Zeichen.\n  Erste Zeile: Betreff: kurzer Betreff ohne Anführungszeichen\n  Danach Hook und Insight.\n  Danach genau 3 Bulletpoints mit -.\n  Wenn weniger Informationen verfügbar sind, formuliere die Bulletpoints allgemein, aber erzeuge trotzdem genau drei.\n  Abschluss mit Call-to-Action als Frage.\n\nDefinition:\n- Hook: 1–2 Sätze, die das Problem oder die Relevanz für Entscheider eröffnen.\n- Insight: Kernaussage oder Erkenntnis aus dem Artikel.\n- Meinung: Einordnung aus B2B-Entscheider-Perspektive.\n- Call-to-Action: Abschließende Frage an Entscheider.\n\n- Wenn ein Textfeld die maximale Zeichenlänge überschreitet, kürze zuerst Beispiele und Wiederholungen, nicht die Kernaussage.\n\n=====================\nSELBSTPRÜFUNG (PFLICHT)\n=====================\nPrüfe deine Antwort in dieser Reihenfolge:\n1) Valides JSON\n2) Genau 8 Top-Level-Keys\n3) Kein trailing comma\n4) Alle Werte Strings\n5) Keine Markdown-Formatierung\n6) Keine Anführungszeichen im Textinhalt\n\nErst danach gib ausschließlich das JSON-Objekt aus.\n\n=====================\nJETZT ERSTELLEN (Input-Werte)\n=====================\ntitle: {{ $('select_top_article').item.json.title }}\npublished_at: {{ $('select_top_article').item.json.published_at }}\nurl: {{ $('select_top_article').item.json.article_url }}\narticle_text: {{ $json.article_text }}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -304,
+        560
+      ],
+      "id": "030b0219-7988-4d91-b5b4-6e6ab3a0f707",
+      "name": "generate_content_assets_(post_and_newsletter)"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "pythonNative",
+        "pythonCode": "import json\nimport re\n\nj = _item.get(\"json\", {})\n\n# 1) Quelle wählen\nraw = j.get(\"output\")\nif not isinstance(raw, str) or raw.strip() == \"\":\n    raw = j.get(\"raw_output\")\n\nif not isinstance(raw, str) or raw.strip() == \"\":\n    return {\"json\": {\"error\": \"missing_output_string\", \"raw_output\": \"\"}}\n\ntext = raw.strip()\n\n# 2) Smart quotes normalisieren\ntext = (\n    text.replace(\"“\", \"\\\"\").replace(\"”\", \"\\\"\")\n        .replace(\"„\", \"\\\"\").replace(\"«\", \"\\\"\").replace(\"»\", \"\\\"\")\n        .replace(\"’\", \"'\").replace(\"‘\", \"'\")\n)\n\n# 3) JSON-Objekt extrahieren (falls extra Text davor/dahinter)\n#    Wir nehmen den ersten { ... } Block greedy, aber sicher:\nstart = text.find(\"{\")\nend = text.rfind(\"}\")\nif start == -1 or end == -1 or end <= start:\n    return {\"json\": {\"error\": \"no_json_object_found\", \"raw_output\": raw}}\n\ncandidate = text[start:end+1].strip()\n\n# 4) trailing commas vor } oder ] entfernen\ncandidate = re.sub(r\",\\s*([}\\]])\", r\"\\1\", candidate)\n\n# 5) Parse\ntry:\n    parsed = json.loads(candidate)\nexcept Exception:\n    return {\"json\": {\"error\": \"invalid_json_from_ai\", \"raw_output\": raw}}\n\n# 6) Muss dict sein\nif not isinstance(parsed, dict):\n    return {\"json\": {\"error\": \"ai_output_not_object\", \"raw_output\": raw}}\n\n# 7) Genau 8 Keys erzwingen (fehlende = \"\")\nexpected = [\n    \"Titel\", \"News\", \"Headline\", \"URL\",\n    \"Post LinkedIn\", \"Post Instagram\", \"Post Facebook\", \"Newsletter\"\n]\n\nfixed = {}\nfor k in expected:\n    v = parsed.get(k, \"\")\n    fixed[k] = v if isinstance(v, str) else str(v)\n\n# 8) Zusätzliche Keys entfernen\n# (bewusst nicht übernehmen)\nreturn {\"json\": fixed}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        560
+      ],
+      "id": "d172390e-e245-4e77-a67e-db12aebe72ad",
+      "name": "parse_ai_JSON_output"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "GOOGLE_SHEET_ID",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "GOOGLE_SHEET_GID_OR_NAME",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Titel": "={{ $json.Titel }}",
+            "News": "={{ $json.News }}",
+            "Headline": "={{ $json.Headline }}",
+            "URL": "={{ $json.URL }}",
+            "Post LinkedIN": "={{ $json['Post LinkedIn'] }}",
+            "Post Instagram": "={{ $json['Post Instagram'] }}",
+            "Post Facebook": "={{ $json['Post Facebook'] }}",
+            "Newsletter": "={{ $json.Newsletter }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Titel",
+              "displayName": "Titel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "News",
+              "displayName": "News",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Headline",
+              "displayName": "Headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Post LinkedIN",
+              "displayName": "Post LinkedIN",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Post Instagram",
+              "displayName": "Post Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Post Facebook",
+              "displayName": "Post Facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Newsletter",
+              "displayName": "Newsletter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        560
+      ],
+      "id": "f386e5b3-96c7-4d1a-9e0b-cdc496718522",
+      "name": "safe_content_to_Google_Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "SLACK_CHANNEL_ID",
+          "mode": "list"
+        },
+        "text": "=Post und Newsletter-Texte mit folgendem Titel {{ $json.Titel }} erstellt",
+        "otherOptions": {
+          "sendAsUser": "REDACTED"
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        512,
+        560
+      ],
+      "id": "fec2eb3c-1905-4805-a787-ed257912a5dd",
+      "name": "notify_slack_content_created",
+      "credentials": {
+        "slackApi": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        720
+      ],
+      "id": "4386c486-4e6b-4c59-91d1-5f8db973cde1",
+      "name": "LLM(OpenAI_Chat_Model)",
+      "credentials": {
+        "openAiApi": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "SLACK_CHANNEL_ID",
+          "mode": "list"
+        },
+        "text": "={{ $execution.id }}\n{{ $workflow.name }}\n\nArtikel konnte nicht extrahiert werden",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        -464,
+        880
+      ],
+      "id": "fb67be06-9d28-4613-b22c-15c4e30d2ec9",
+      "name": "notify_slack_extraction_failed",
+      "credentials": {
+        "slackApi": {
+          "name": "REDACTED_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 📌 b2b-trend-monitoring-and-content-engine\n\n## 🎯 Zweck\nAutomatisierte Erkennung relevanter B2B-Trends und Nachrichten, Bewertung nach Business Impact und KI-gestützte Erstellung von Social-Posts und Newsletter-Inhalten für Entscheider im Mittelstand.\n\n## 📥 Input\n- Zielgruppen-, Rollen- und Branchenkontext (Google Sheets)\n- Strategische, entscheidungsnahe Such-Queries\n- Aktuelle B2B-News (Google News via SerpAPI)\n\n## ⚙️ Verarbeitung\n1. Generierung & Normalisierung von Suchanfragen (SEO & GAIO)\n2. Abruf aktueller Nachrichtenquellen\n3. Extraktion & Aufbereitung von Artikel-Metadaten\n4. Qualitätsfilter (Advertorials, PR, veraltete Inhalte)\n5. Business-Impact-Scoring (Kosten, Effizienz, Sicherheit, Wachstum)\n6. Auswahl der relevantesten Top-Story\n7. HTML → Text-Extraktion\n8. KI-basierte Content-Erstellung (Social Media & Newsletter)\n9. Parsing und Validierung des KI-Outputs\n\n## 📤 Output\n- Strukturierte Content-Assets:\n  - LinkedIn Post\n  - Instagram Post\n  - Facebook Post\n  - Newsletter\n- Zentrale Ablage in Google Sheets\n- Benachrichtigung via Slack\n\n## 🚨 Fehlerfälle\n- Keine relevanten oder validen Artikel gefunden\n- Artikelinhalt nicht extrahierbar (Paywall / technische Fehler)\n- Ungültiger oder unvollständiger KI-Output\n- Alle Fehler werden geloggt und optional per Slack gemeldet.\n\n## 🔐 Abhängigkeiten\n- SerpAPI (Google News)\n- OpenAI API (LLM)\n- Google Sheets API\n- Slack API\n\n## 🧠 Besonderheiten\n- Trend- & Entscheidungsfokus statt reiner Keyword-Recherche\n- Business-Impact-Scoring vor KI-Generierung\n- Halluzinationsarme KI-Ausgabe durch strikte Prompt- und Fallback-Logik\n- Vollständig automatisiert, reproduzierbar und produktionsnah\n",
+        "height": 1264,
+        "width": 800,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1648,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "041f7647-03ed-4028-bd7a-3c7eb5693bd8",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "fetch_article_html": {
+      "main": [
+        [
+          {
+            "node": "extract_article_text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly_Run": {
+      "main": [
+        [
+          {
+            "node": "load_target_audience_(Google_Sheets)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "load_target_audience_(Google_Sheets)1": {
+      "main": [
+        [
+          {
+            "node": "set_audience_context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set_audience_context": {
+      "main": [
+        [
+          {
+            "node": "generate_search_queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_search_queries": {
+      "main": [
+        [
+          {
+            "node": "parse_queries_list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse_queries_list": {
+      "main": [
+        [
+          {
+            "node": "normalize_queries_for_Google_News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "normalize_queries_for_Google_News": {
+      "main": [
+        [
+          {
+            "node": "fetch_Google_News_results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch_Google_News_results": {
+      "main": [
+        [
+          {
+            "node": "extract_article_links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract_article_links": {
+      "main": [
+        [
+          {
+            "node": "split_articles_into_items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split_articles_into_items": {
+      "main": [
+        [
+          {
+            "node": "filter_and_score_articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter_and_score_articles": {
+      "main": [
+        [
+          {
+            "node": "select_top_article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "select_top_article": {
+      "main": [
+        [
+          {
+            "node": "fetch_article_html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract_article_text": {
+      "main": [
+        [
+          {
+            "node": "validate_article_text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validate_article_text": {
+      "main": [
+        [
+          {
+            "node": "generate_content_assets_(post_and_newsletter)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "notify_slack_extraction_failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_content_assets_(post_and_newsletter)": {
+      "main": [
+        [
+          {
+            "node": "parse_ai_JSON_output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse_ai_JSON_output": {
+      "main": [
+        [
+          {
+            "node": "safe_content_to_Google_Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "safe_content_to_Google_Sheets": {
+      "main": [
+        [
+          {
+            "node": "notify_slack_content_created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM(OpenAI_Chat_Model)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "generate_content_assets_(post_and_newsletter)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  }
+}
